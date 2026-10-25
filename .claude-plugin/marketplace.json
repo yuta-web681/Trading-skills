@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "trading-skills",
+  "description": "Sammlung der Trader-Skill-Pakete von Jake Schincariol (MIT)",
+  "owner": {
+    "name": "yuta-web681"
+  },
+  "plugins": [
+    {
+      "name": "trader-skill",
+      "description": "11 Skills fuers langfristige Investieren: 13F kopieren, Earnings, Screener, Budget, Risiko, Rebalancing, News, Alerts, Steuer-Lots, Pelosi-Tracker, Broker.",
+      "source": "./investing",
+      "category": "productivity",
+      "homepage": "https://github.com/Jakeschincariol/trader-skill"
+    },
+    {
+      "name": "day-trader-skill",
+      "description": "11 Skills fuers Day Trading: Chart-Scanner, Entry/Exit, Time Machine (Backtest), Risiko, Budget, Broker, News, Alerts, Analyst, Pelosi-Tracker.",
+      "source": "./day-trading",
+      "category": "productivity",
+      "homepage": "https://github.com/Jakeschincariol/day-trader-skill"
+    }
+  ]
+}
