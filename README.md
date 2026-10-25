@@ -5,7 +5,7 @@ Sammlung von Claude-Skills für Investieren und Trading. Beide Pakete stammen vo
 
 | Ordner | Quelle | Inhalt |
 | --- | --- | --- |
-| `investing/` | [Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill) (Commit `unknown`) | 11 Skills fürs langfristige Investieren |
+| `investing/` | [Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill) (Commit `5189e79`) | 11 Skills fürs langfristige Investieren |
 | `day-trading/` | [Jakeschincariol/day-trader-skill](https://github.com/Jakeschincariol/day-trader-skill) (Commit `3d0f4ef`) | 11 Skills fürs Day Trading |
 
 Beide Pakete benutzen teilweise dieselben Skill-Namen (z. B. `trader-risk`), die Inhalte
