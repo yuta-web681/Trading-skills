@@ -57,8 +57,17 @@ class DataError(Exception):
 
 # ---------------------------------------------------------------- data
 
+EXCHANGES = {"DE", "F", "SG", "MU", "DU", "HM", "BE", "VI", "SW", "L", "PA", "AS", "BR", "MI", "MC",
+             "LS", "ST", "CO", "OL", "HE", "IR", "TO", "V", "HK", "T", "AX", "SI", "KS", "NS", "BO"}
+
+
 def yahoo_symbol(ticker):
-    return ticker.upper().replace(".", "-")  # BRK.B -> BRK-B
+    """BRK.B -> BRK-B (share class); SAP.DE, NESN.SW, SHEL.L keep their exchange suffix."""
+    t = ticker.upper()
+    base, dot, suffix = t.rpartition(".")
+    if dot and suffix in EXCHANGES:
+        return t
+    return t.replace(".", "-")
 
 
 def chart_path(ticker, interval, now):
