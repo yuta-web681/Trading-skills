@@ -1,6 +1,6 @@
 # The Trader skill
 
-11 Claude skills that copy the investors you trust, watch the news and Congress, size every trade to your budget, and never place an order without your yes.
+12 Claude skills that copy the investors you trust, watch the news and Congress, size every trade to your budget, and never place an order without your yes.
 
 Free, MIT, no signup, no API key. The tools are plain Python that read public
 data: SEC EDGAR, the House Clerk, news feeds.
@@ -50,7 +50,7 @@ script to identify itself: put your name and email in `trader/config.json`
 (`"sec_user_agent": "Your Name you@example.com"`) or in the `SEC_USER_AGENT`
 environment variable.
 
-## The eleven
+## The twelve
 
 | command | job | what it does |
 | --- | --- | --- |
@@ -65,6 +65,7 @@ environment variable.
 | `/trader-tax` | Tax Optimizer | Tracks cost-basis lots, gains and losses, tax-loss harvesting candidates and wash sales. |
 | `/trader-alerts` | Price Alerts | Rings when a price target, a stop or the opening bell hits, with the real NYSE calendar. |
 | `/trader-rebalance` | Rebalancer | Brings the portfolio back to its target weights when it drifts past your band. |
+| `/trader-technicals` | Chart Check | Trend, 50/200-day averages, RSI, support and resistance, drawdowns and month-by-month seasonality, with a noise flag. |
 
 ## How to use it
 
@@ -182,6 +183,7 @@ trader-broker/     SKILL.md, ticket.py, claude_desktop_config.example.json
 trader-tax/        SKILL.md, lots.py, portfolio.example.json
 trader-alerts/     SKILL.md, alerts.py, alerts.example.json
 trader-rebalance/  SKILL.md, rebalance.py
+trader-technicals/ SKILL.md, technicals.py
 tests/             unittest suite + offline fixtures
 ```
 
