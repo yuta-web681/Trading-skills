@@ -210,11 +210,12 @@ def trend_label(price, s50, s200, s200_before):
     if None in (s50, s200, s200_before):
         return "unknown", "not enough history for the 200-day average"
     rising = s200 > s200_before
-    if price > s200 and s50 > s200 and rising:
+    if price > s50 > s200 and rising:
         return "uptrend", "price above the 50- and 200-day averages, 50 above 200, 200-day rising"
-    if price < s200 and s50 < s200 and not rising:
-        return "downtrend", "price below the 200-day average, 50 below 200, 200-day falling"
-    bits = ["price %s the 200-day" % ("above" if price > s200 else "below"),
+    if price < s50 < s200 and not rising:
+        return "downtrend", "price below the 50- and 200-day averages, 50 below 200, 200-day falling"
+    bits = ["price %s the 50-day" % ("above" if price > s50 else "below"),
+            "%s the 200-day" % ("above" if price > s200 else "below"),
             "50-day %s the 200-day" % ("above" if s50 > s200 else "below"),
             "200-day %s" % ("rising" if rising else "falling")]
     return "mixed", ", ".join(bits)
@@ -229,7 +230,7 @@ def monthly_returns(mbars, today):
     closes = [by_month[k] for k in sorted(by_month)]
     out = {}
     for (d0, c0), (d1, c1) in zip(closes, closes[1:]):
-        if c0:
+        if c0 and (d1.year * 12 + d1.month) - (d0.year * 12 + d0.month) == 1:  # a gap is no return
             out[(d1.year, d1.month)] = (c1 / c0 - 1) * 100
     return out
 
@@ -264,7 +265,7 @@ def analyse(ticker, daily, monthly, bench=None, years=15, today=None, bench_name
     if len(closes) < 60:
         raise DataError("%s: only %d daily closes" % (ticker, len(closes)))
     last_date, price = bars[-1]
-    today = today or last_date
+    today = today or last_date  # the calendar date: decides the running month and the next months
     s50, s200 = sma(closes, 50), sma(closes, 200)
     s200_before = sma(closes[:-21], 200) if len(closes) >= 221 else None
     label, why = trend_label(price, s50, s200, s200_before)
@@ -379,10 +380,13 @@ def main(argv=None):
         except DataError as e:
             print("benchmark skipped: %s" % e, file=sys.stderr)
     results, errors = [], []
+    # live: the calendar decides the running month (on Jan 1 December is complete);
+    # offline: the files' last bar does
+    today = None if a.offline else datetime.date.today()
     for t in a.tickers:
         try:
             results.append(analyse(t, load(t, "1d", a.offline), load(t, "1mo", a.offline), bench, a.years,
-                                   bench_name=a.benchmark))
+                                   today=today, bench_name=a.benchmark))
         except DataError as e:
             errors.append(str(e))
     doc = {"generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

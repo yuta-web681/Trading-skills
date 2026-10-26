@@ -59,7 +59,10 @@ class Math(unittest.TestCase):
         self.assertEqual(tech.trend_label(90, 95, 100, 101)[0], "downtrend")
         label, why = tech.trend_label(95, 105, 100, 99)
         self.assertEqual(label, "mixed")
-        self.assertIn("price below the 200-day", why)
+        self.assertIn("price below the 50-day, below the 200-day", why)
+        # below the 50-day but above a rising 200-day is a correction, not an uptrend
+        self.assertEqual(tech.trend_label(110, 120, 100, 99)[0], "mixed")
+        self.assertEqual(tech.trend_label(98, 95, 100, 101)[0], "mixed")
         self.assertEqual(tech.trend_label(1, None, None, None)[0], "unknown")
 
     def test_swings(self):
@@ -81,6 +84,19 @@ class Seasonality(unittest.TestCase):
         r = tech.monthly_returns(bars, datetime.date(2026, 1, 20))
         self.assertEqual(list(r), [(2025, 12)])
         self.assertAlmostEqual(r[(2025, 12)], 10.0)
+
+    def test_missing_month_is_no_return(self):
+        bars = [(datetime.date(2025, 1, 1), 100.0), (datetime.date(2025, 3, 1), 121.0),
+                (datetime.date(2025, 4, 1), 133.1)]
+        r = tech.monthly_returns(bars, datetime.date(2025, 6, 1))
+        self.assertEqual(list(r), [(2025, 4)])
+
+    def test_calendar_date_closes_the_month(self):
+        bars = [(datetime.date(2025, 11, 1), 100.0), (datetime.date(2025, 12, 1), 110.0),
+                (datetime.date(2025, 12, 31), 121.0)]
+        self.assertEqual(list(tech.monthly_returns(bars, datetime.date(2025, 12, 31))), [])
+        r = tech.monthly_returns(bars, datetime.date(2026, 1, 1))
+        self.assertAlmostEqual(r[(2025, 12)], 21.0)
 
     def test_signal_and_noise_and_excess(self):
         mret, bench = {}, {}
