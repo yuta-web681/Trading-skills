@@ -152,6 +152,15 @@ class Stage(unittest.TestCase):
         self.assertEqual(r["stage"], "stage 4 (falling 200-day)")
         self.assertIn("price above the 50-day", r["failed"])
 
+    def test_rs_uses_the_benchmark_on_the_same_dates(self):
+        bars = make(path(50, [(300, 100)]))
+        flat = flat_bench(bars)
+        late = flat + [(bars[-1].d + datetime.timedelta(days=3), 200.0)]  # a later SPY session
+        holes = [x for i, x in enumerate(flat) if i % 7]                  # SPY missing some days
+        rs = st.trend_template(bars, flat)["rs_vs_bench"]
+        self.assertAlmostEqual(st.trend_template(bars, late)["rs_vs_bench"], rs)
+        self.assertAlmostEqual(st.trend_template(bars, holes)["rs_vs_bench"], rs)
+
     def test_without_benchmark_seven_of_seven_is_enough(self):
         r = st.trend_template(make(path(50, [(300, 100)])))
         self.assertEqual(r["stage"], "stage 2")
@@ -303,7 +312,11 @@ class Pead(unittest.TestCase):
         r = st.pead(bars, g)
         self.assertEqual(r["state"], "signal ready")
         self.assertAlmostEqual(r["entry"], 94 * 1.003, places=2)
-        extend(bars, [92, 94, 95, 96, 97])                 # next week closes above the red high
+        extend(bars, [97])                                 # Monday above the red high: not yet
+        r = st.pead(bars, g)
+        self.assertEqual(r["state"], "signal ready")
+        self.assertIn("Friday close", r["why"])
+        extend(bars, [94, 95, 96, 97])                     # the week closes above the red high
         r = st.pead(bars, g)
         self.assertEqual(r["state"], "breakout")
 

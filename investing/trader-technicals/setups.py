@@ -40,6 +40,7 @@ before a move; most setups fail, which is why each one carries a stop.
 """
 
 import argparse
+import bisect
 import datetime
 import gzip
 import json
@@ -287,6 +288,12 @@ def zigzag(bars, thr):
 
 # ---------------------------------------------------------------- setups
 
+def close_on(series, day):
+    """The close of [(date, close)] on `day` or the last session before it."""
+    i = bisect.bisect_right([d for d, _ in series], day)
+    return series[i - 1][1] if i else None
+
+
 def trend_template(bars, bench=None):
     closes = [b.c for b in bars]
     price = closes[-1]
@@ -294,14 +301,16 @@ def trend_template(bars, bench=None):
     s200_before = T.sma(closes[:-22], 200) if len(closes) >= 222 else None
     yr = bars[-252:]
     hi52, lo52 = max(b.h for b in yr), min(b.l for b in yr)
-    rs, parts = None, []
+    rs = None
     if bench:
-        bc = [b[1] for b in bench]
         tot = 0.0
+        b_now = close_on(bench, bars[-1].d)  # the benchmark as of the stock's last day
         for days, w in ((63, .4), (126, .2), (189, .2), (252, .2)):
-            if len(closes) > days and len(bc) > days:
-                rel = pct(closes[-1], closes[-1 - days]) - pct(bc[-1], bc[-1 - days])
-                parts.append(rel)
+            if len(closes) > days:
+                b_then = close_on(bench, bars[-1 - days].d)
+                if b_now is None or b_then is None:
+                    continue
+                rel = pct(closes[-1], closes[-1 - days]) - pct(b_now, b_then)
                 rs = (rs or 0.0) + rel * w
                 tot += w
         rs = rs / tot if rs is not None and tot else None
@@ -581,10 +590,13 @@ def pead(bars, gap):
                target_2r=r.h + 2 * risk)
     if out["risk_pct"] > 10:
         out["warning"] = "wide stop: the red week spans %.0f%%" % out["risk_pct"]
-    later = after[reds[-1] + 1:]
+    later = done[reds[-1] + 1:]  # only finished weeks confirm a breakout
     broke = [w for w in later if w.c > r.h and w.c >= w.o]
     if broke:
         out.update(state="breakout", why="week of %s closed above the red week's high" % broke[0].d.isoformat())
+    elif out["running_week"] and bars[-1].c > r.h:
+        out.update(state="signal ready", why="the running week trades above the red week's high; "
+                                             "a breakout needs the Friday close")
     else:
         out.update(state="signal ready", why="buy stop above the red week's high")
     return out
