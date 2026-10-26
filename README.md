@@ -5,7 +5,7 @@ Sammlung von Claude-Skills für Investieren und Trading. Beide Pakete stammen vo
 
 | Ordner | Quelle | Inhalt |
 | --- | --- | --- |
-| `investing/` | [Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill) (Commit `5189e79`) | 11 Skills fürs langfristige Investieren |
+| `investing/` | [Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill) (Commit `5189e79`) | 12 Skills (11 + eigener `trader-technicals`) fürs langfristige Investieren |
 | `day-trading/` | [Jakeschincariol/day-trader-skill](https://github.com/Jakeschincariol/day-trader-skill) (Commit `3d0f4ef`) | 11 Skills fürs Day Trading |
 
 Beide Pakete benutzen teilweise dieselben Skill-Namen (z. B. `trader-risk`), die Inhalte
@@ -17,6 +17,7 @@ oder nutze die Plugin-Variante, bei der die Namen getrennt sind.
 - **trader-copycat:** Portfolio bekannter Investoren aus 13F-Meldungen nachbauen
 - **trader-analyst:** Quartalszahlen aus SEC-Daten
 - **trader-screener:** Aktien nach eigenen Regeln filtern
+- **trader-technicals:** Charttechnik (Trend, GD50/200, RSI, Unterstützung/Widerstand) und Saisonalität (eigene Ergänzung)
 - **trader-budget:** Positionsgrößen mit Cash-Reserve und Obergrenze
 - **trader-rebalance:** Zurück auf Zielgewichte
 - **trader-risk:** Jede Order gegen Limits prüfen (PASS/BLOCK)
