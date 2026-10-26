@@ -109,6 +109,11 @@ class Parse(unittest.TestCase):
         self.assertAlmostEqual(bars[1].l, 5.0)
         self.assertEqual(bars[1].v, 300)
 
+    def test_exchange_suffix_stays(self):
+        self.assertEqual(st.T.yahoo_symbol("BRK.B"), "BRK-B")
+        self.assertEqual(st.T.yahoo_symbol("sap.de"), "SAP.DE")
+        self.assertEqual(st.T.yahoo_symbol("SHEL.L"), "SHEL.L")
+
     def test_errors(self):
         with self.assertRaises(st.T.DataError):
             st.parse_ohlcv("nope", "X")

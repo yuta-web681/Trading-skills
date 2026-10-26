@@ -58,7 +58,9 @@ python3 "${CLAUDE_SKILL_DIR}/setups.py" --help       # swing setups: stage 2, VC
 
 1. Take the tickers from the user, from `trader/targets.json`
    (`/trader-copycat`) or from `trader/shortlist.json` (`/trader-screener`).
-   Use `BRK.B`, it becomes `BRK-B` for Yahoo.
+   Use `BRK.B`, it becomes `BRK-B` for Yahoo. European listings keep their
+   exchange suffix: `SAP.DE`, `ALV.DE`, `NESN.SW`, `SHEL.L` (no SEC catalyst
+   for them, and RS vs. SPY then mixes in the EUR/USD move).
 2. Run it:
 
    ```bash
