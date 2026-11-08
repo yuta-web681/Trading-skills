@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "trader-skill",
-      "description": "Eleven Claude skills for investing: copy a famous investor's 13F, watch the news, size trades to your budget, track Congress's stock disclosures, read earnings, screen, check risk, place approved orders, harvest tax losses, price alerts and rebalancing.",
+      "description": "Twelve Claude skills for investing: copy a famous investor's 13F, watch the news, size trades to your budget, track Congress's stock disclosures, read earnings, screen, check risk, place approved orders, harvest tax losses, price alerts, rebalancing and a long-term chart and seasonality check.",
       "source": "./",
       "category": "productivity",
       "homepage": "https://github.com/Jakeschincariol/trader-skill"

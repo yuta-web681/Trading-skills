@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "trader-skill",
-      "description": "11 Skills fuers langfristige Investieren: 13F kopieren, Earnings, Screener, Budget, Risiko, Rebalancing, News, Alerts, Steuer-Lots, Pelosi-Tracker, Broker.",
+      "description": "12 Skills fuers langfristige Investieren: 13F kopieren, Earnings, Screener, Charttechnik und Saisonalitaet, Budget, Risiko, Rebalancing, News, Alerts, Steuer-Lots, Pelosi-Tracker, Broker.",
       "source": "./investing",
       "category": "productivity",
       "homepage": "https://github.com/Jakeschincariol/trader-skill"
