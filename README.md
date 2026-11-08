@@ -17,7 +17,7 @@ oder nutze die Plugin-Variante, bei der die Namen getrennt sind.
 - **trader-copycat:** Portfolio bekannter Investoren aus 13F-Meldungen nachbauen
 - **trader-analyst:** Quartalszahlen aus SEC-Daten
 - **trader-screener:** Aktien nach eigenen Regeln filtern
-- **trader-technicals:** Charttechnik (Trend, GD50/200, RSI, Unterstützung/Widerstand) und Saisonalität (eigene Ergänzung)
+- **trader-technicals:** Charttechnik (Trend, GD50/200, RSI, Unterstützung/Widerstand) und Saisonalität, dazu Swing-Setups: Stage 2 (Minervini), VCP, Episodic Pivot mit SEC-Katalysator, Multi-Edge-Pullback (J Law), PEAD, Momentum Burst (eigene Ergänzung, Regeln nach [tradermonty/claude-trading-skills](https://github.com/tradermonty/claude-trading-skills))
 - **trader-budget:** Positionsgrößen mit Cash-Reserve und Obergrenze
 - **trader-rebalance:** Zurück auf Zielgewichte
 - **trader-risk:** Jede Order gegen Limits prüfen (PASS/BLOCK)

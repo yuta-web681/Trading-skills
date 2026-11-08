@@ -65,7 +65,7 @@ environment variable.
 | `/trader-tax` | Tax Optimizer | Tracks cost-basis lots, gains and losses, tax-loss harvesting candidates and wash sales. |
 | `/trader-alerts` | Price Alerts | Rings when a price target, a stop or the opening bell hits, with the real NYSE calendar. |
 | `/trader-rebalance` | Rebalancer | Brings the portfolio back to its target weights when it drifts past your band. |
-| `/trader-technicals` | Chart Check | Trend, 50/200-day averages, RSI, support and resistance, drawdowns and month-by-month seasonality, with a noise flag. |
+| `/trader-technicals` | Chart Check | Trend, 50/200-day averages, RSI, support and resistance, drawdowns and month-by-month seasonality, with a noise flag; swing setups (stage 2, VCP, Episodic Pivot with SEC catalyst, Multi-Edge pullback, PEAD, Momentum Burst) with entry, stop and risk. |
 
 ## How to use it
 
@@ -183,7 +183,7 @@ trader-broker/     SKILL.md, ticket.py, claude_desktop_config.example.json
 trader-tax/        SKILL.md, lots.py, portfolio.example.json
 trader-alerts/     SKILL.md, alerts.py, alerts.example.json
 trader-rebalance/  SKILL.md, rebalance.py
-trader-technicals/ SKILL.md, technicals.py
+trader-technicals/ SKILL.md, technicals.py, setups.py
 tests/             unittest suite + offline fixtures
 ```
 
