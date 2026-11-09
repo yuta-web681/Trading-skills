@@ -59,6 +59,9 @@ class Parsing(unittest.TestCase):
         self.assertEqual(sc.num("1.234,56"), 1234.56)
         self.assertEqual(sc.num("1,234.56"), 1234.56)
         self.assertEqual(sc.num("12,5"), 12.5)
+        self.assertEqual(sc.num("1.234"), 1.234)          # a single dot is a decimal point
+        self.assertEqual(sc.num("3.6628"), 3.6628)
+        self.assertEqual(sc.num("1.234.567"), 1234567.0)
         self.assertEqual(sc.num({"amount": "7.5", "currency": "EUR"}), 7.5)
         self.assertIsNone(sc.num(None))
         self.assertIsNone(sc.num(True))
@@ -82,6 +85,17 @@ class Parsing(unittest.TestCase):
 
     def test_empty_depot(self):
         self.assertEqual(sc.parse_holdings(fx("scalable-holdings-empty.json")), [])
+
+    def test_unknown_rows_next_to_an_empty_list_are_not_an_empty_depot(self):
+        with self.assertRaises(sc.ScalableError):
+            sc.parse_holdings({"items": [{"securityId": "US0378331005", "quantity": 2}], "crypto_items": []})
+
+    def test_nested_position_is_counted_once(self):
+        doc = {"items": [{"security": {"isin": "US0378331005"},
+                          "position": {"isin": "US0378331005", "quantity": 2, "price": 100}}]}
+        rows = sc.parse_holdings(doc)
+        self.assertEqual(rows[0]["shares"], 2)
+        self.assertEqual(rows[0]["value"], 200)
 
     def test_unknown_shape_fails_loudly(self):
         with self.assertRaises(sc.ScalableError):

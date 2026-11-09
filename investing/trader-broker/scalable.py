@@ -185,7 +185,11 @@ def num(v):
         return None
     if isinstance(v, str):
         s = v.strip().replace(" ", "").replace(" ", "").replace("EUR", "").replace("€", "")
-        if re.match(r"^-?\d{1,3}(\.\d{3})+(,\d+)?$", s) or re.match(r"^-?\d+,\d+$", s):
+        # German format only when it cannot be a plain decimal: a comma decimal
+        # ("12,5", "1.234,56") or two or more dot groups ("1.234.567").
+        # A single dot ("1.234") is always a decimal point.
+        if re.match(r"^-?\d{1,3}(\.\d{3})*,\d+$", s) or re.match(r"^-?\d+,\d+$", s) \
+                or re.match(r"^-?\d{1,3}(\.\d{3}){2,}$", s):
             s = s.replace(".", "").replace(",", ".")
         else:
             s = s.replace(",", "")
@@ -253,16 +257,32 @@ def parse_holdings(doc):
     """[{isin, name, shares, price, value, avg_cost}] from a get_portfolio_holdings answer."""
     doc = unwrap(doc)
     found = {}
-    isin_rows = 0
-    for d in walk(doc):
-        isin = _isin_of(d)
-        if not isin:
-            continue
-        isin_rows += 1
-        flat = _merged(d)
-        qty = _first(flat, QTY_KEYS)
-        if qty is None or qty <= 0:
-            continue
+    counts = {"isin_rows": 0}
+    rows = []
+
+    def visit(node):
+        """Depth first; a dict that is consumed as a holding is not searched
+        further, so a nested position object is never counted twice."""
+        if isinstance(node, list):
+            for v in node:
+                visit(v)
+            return
+        if not isinstance(node, dict):
+            return
+        isin = _isin_of(node)
+        if isin:
+            counts["isin_rows"] += 1
+            flat = _merged(node)
+            qty = _first(flat, QTY_KEYS)
+            if qty is not None and qty > 0:
+                rows.append((isin, flat, qty))
+                return
+        for v in node.values():
+            visit(v)
+
+    visit(doc)
+    isin_rows = counts["isin_rows"]
+    for isin, flat, qty in rows:
         value = _first(flat, VALUE_KEYS)
         price = _first(flat, PRICE_KEYS)
         if price is None and value is not None and qty:
@@ -289,9 +309,13 @@ def parse_holdings(doc):
             raise ScalableError("the holdings answer has %d ISIN entries but none with a quantity field I know "
                                 "(%s); show Claude the raw file so the parser can learn the shape"
                                 % (isin_rows, ", ".join(QTY_KEYS[:4])))
-        empty = isinstance(doc, dict) and any(isinstance(v, list) and not v for v in doc.values())
-        if empty:
-            return []
+        # An empty depot only when the holdings collection itself is empty and
+        # nothing else in the answer has entries that might be unrecognised holdings.
+        if isinstance(doc, dict):
+            main = [k for k in doc if str(k).lower() in ("items", "holdings", "positions")]
+            lists = [v for d in walk(doc) for v in d.values() if isinstance(v, list)]
+            if main and all(isinstance(doc[k], list) and not doc[k] for k in main) and not any(lists):
+                return []
         raise ScalableError("no holdings found in the answer (no object with an ISIN); is this the "
                             "get_portfolio_holdings answer?")
     return sorted(found.values(), key=lambda r: -(r["value"] or 0))
