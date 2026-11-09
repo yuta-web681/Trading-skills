@@ -7,8 +7,10 @@ description: >-
   word for word, then Claude's own Allow once / Deny card asks again. Covers
   setting up Alpaca's official MCP server in Claude Desktop (paper trading by
   default, keys in env vars, never in chat), the Interactive Brokers connector
-  (orders go to your IBKR account for your approval), and setting order tools
-  to "Needs approval". Use when the user says "place the orders", "buy it",
+  (orders go to your IBKR account for your approval), Scalable Capital's
+  official MCP server (German broker, ISINs and euros, read-only access level
+  recommended; scalable.py syncs holdings and cash into trader/portfolio.json),
+  and setting order tools to "Needs approval". Use when the user says "place the orders", "buy it",
   "execute", "send it to my broker", "connect Alpaca", "connect Interactive
   Brokers", "set up paper trading", or after /trader-risk passes.
 argument-hint: "[order number]"
@@ -108,6 +110,77 @@ IBKR as well. Set `"broker": "ibkr"` in `trader/config.json`, and size with
 `--whole-shares` if IBKR wants share counts. Set its tools that draft orders
 to Needs approval too.
 
+## Setup C: Scalable Capital (official MCP server, German broker)
+
+Scalable Capital runs an official MCP server at `https://mcp.scalable.capital/mcp`
+(OAuth sign-in with 2FA in the browser, no keys). It is a German broker, so it
+withholds Abgeltungsteuer and Soli itself and honours the Freistellungsauftrag.
+Scalable charges nothing extra for the MCP access; normal broker fees apply.
+There is **no paper account**: every order is real money.
+
+1. In the Scalable web app: Profile > Security > Agentic Investing. Pick the
+   access level. **Read-only** is the recommended start: Claude sees holdings,
+   cash, transactions, quotes and savings plans and can preview orders, but
+   cannot change anything. "Limited" adds watchlists, price alerts and portfolio
+   groups. Only "Full access" allows orders and savings plans. The level counts
+   for every AI assistant at once.
+2. In Claude (web): Customize > Connectors > Add custom connector, URL
+   `https://mcp.scalable.capital/mcp`, then sign in to Scalable in the window it
+   opens, never in the chat. The connector then also shows up in Claude Desktop.
+   Claude Code: `claude mcp add --transport http scalable https://mcp.scalable.capital/mcp`.
+   Access is time limited; when a tool answers that the sign-in expired, the
+   user reconnects in the connector settings.
+3. Tool permissions (Customize > Connectors > Scalable):
+   - `submit_buy_order`, `submit_sell_order`, `submit_savings_plan`,
+     `cancel_order`, `remove_savings_plan`: **Needs approval**, or **Blocked**
+     while the access level is Read-only. Never Always allow.
+   - every other `create_`, `add_`, `remove_`, `upsert_` tool: Needs approval.
+   - read tools (`get_portfolio_holdings`, `get_portfolio_cash_breakdown`,
+     `get_portfolio_overview`, `list_portfolio_transactions`, `list_savings_plans`,
+     `get_security_quote`, `search_securities`, `preview_buy_order`,
+     `preview_sell_order`, `preview_savings_plan`): Always allow is fine.
+4. In `trader/config.json`: `"broker": "scalable"`. Amounts in the config
+   (`budget`, `max_order_usd`, `min_order_usd`) are then read as euros.
+
+Scalable works with ISINs and euros; the pack works with tickers. `scalable.py`
+bridges the two and never talks to Scalable itself:
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scalable.py" map --targets trader/targets.json   # ticker -> ISIN (from 13F CUSIPs)
+python3 "${CLAUDE_SKILL_DIR}/scalable.py" sync          # saved answers -> portfolio.json + prices.json (EUR)
+python3 "${CLAUDE_SKILL_DIR}/scalable.py" tickets       # orders.json -> ISIN, EUR amount, shares to sell
+```
+
+**Sync (read only, any access level).** Call `get_portfolio_holdings` and
+`get_portfolio_cash_breakdown`, save each raw answer unchanged to
+`trader/scalable/holdings.json` and `trader/scalable/cash.json`. For target
+stocks not yet held, call `get_security_quote` per ISIN and save it as
+`trader/scalable/quote-<TICKER>.json`. Then run `scalable.py sync` with a
+`--quote` for each. It writes `trader/portfolio.json` (cash is the cash balance,
+never buying power, which can include credit) and `trader/prices.json` in EUR,
+so trader-rebalance, trader-budget and trader-risk run on the real depot. ETFs
+and German stocks have no CUSIP: add them to `trader/isin_map.json` by hand
+(`{"isins": {"EUNL": "IE00B4L5Y983"}}`) or use the ISIN itself as the ticker in
+the targets. If `sync` says it does not recognise the answer, show the user the
+error, not the file contents, and stop.
+
+**Orders.** Same three gates as above, adapted to Scalable's own two-step flow:
+1. trader-risk PASS for that exact order today, 2. the user's explicit yes on
+the ticket (`ticket.py approve`), 3. `scalable.py tickets` gives the ISIN and
+EUR amount (buys by amount; sells in shares), Claude calls `preview_buy_order`
+or `preview_sell_order` and shows the **whole** `userReview` with every
+acknowledgement text, translated, nothing rounded. Then:
+- Read-only level (recommended): the user places the order in the Scalable app
+  with exactly those values. If Scalable returns a `brokerHandoff.url` because
+  submitting is blocked, give the user that link.
+- Full access: only after a second, separate yes to that review, call the
+  matching `submit_` tool with the preview's `submission` unchanged and exactly
+  the acknowledgement IDs the user accepted; Claude's Allow once card follows.
+  A preview expires; a changed order needs a new preview and a new yes. After a
+  timeout or unknown outcome, never retry: check the app.
+
+Record the outcome with `ticket.py result` as usual, then re-sync instead of `ticket.py fill`.
+
 ## Steps, for each order
 
 1. `ticket.py show`. Only READY tickets go to the user. A ticket that is NOT
@@ -149,6 +222,7 @@ buttons: Allow once, Deny. Allow once sends it to the paper account.
 - Never places orders from a scheduled or background task: nobody is there to say yes.
 - Never asks for, reads, stores or repeats API keys or passwords.
 - Never switches `ALPACA_PAPER_TRADE` or `"paper"` to live. The user does that themselves.
+- Never raises the Scalable access level, and never submits a Scalable order without its own preview and a fresh yes.
 - Never calls `close_all_positions`, `cancel_all_orders`, option or crypto order tools on its own.
 
 ## Safety

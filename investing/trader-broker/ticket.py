@@ -43,10 +43,12 @@ STRING_FIELDS = ("qty", "notional", "limit_price", "stop_price", "trail_price", 
                  "take_profit_limit_price", "stop_loss_stop_price", "stop_loss_limit_price")
 TIF_WORDS = {"day": "good for today", "gtc": "good until canceled", "opg": "at the open",
              "cls": "at the close", "ioc": "immediate or cancel", "fok": "fill or kill"}
-YES_WORDS = ("yes", "y")
-BATCH_WORDS = {"all", "every", "everything", "rest", "remaining", "them", "both", "batch", "each"}
+YES_WORDS = ("yes", "y", "ja")
+BATCH_WORDS = {"all", "every", "everything", "rest", "remaining", "them", "both", "batch", "each",
+               "alle", "alles", "beide", "restlichen", "jede", "jeden"}
 DOUBT_WORDS = {"no", "not", "dont", "don't", "wait", "cancel", "stop", "but", "maybe", "later",
-               "hold", "unless", "if"}
+               "hold", "unless", "if", "nein", "nicht", "warte", "stopp", "aber", "vielleicht", "später",
+               "spaeter", "wenn", "falls", "erst"}
 
 
 class TicketError(Exception):
@@ -115,28 +117,34 @@ def tool_input(order):
     return out
 
 
-def _money(v):
+def _money(v, cur="$"):
     f = float(v)
     s = "{:,.2f}".format(f)
-    return "$" + (s[:-3] if s.endswith(".00") else s)
+    s = s[:-3] if s.endswith(".00") else s
+    return cur + s if cur == "$" else s + " " + cur
 
 
-def plain(order):
+def currency(cfg):
+    """Scalable trades in euros; Alpaca and the pack's defaults in dollars."""
+    return "EUR" if str((cfg or {}).get("broker", "")).lower() == "scalable" else "$"
+
+
+def plain(order, cur="$"):
     """BUY $1,250 of AAPL, market order, good for today"""
     side = str(order.get("side", "")).upper()
     sym = order.get("symbol", "?")
     if order.get("notional") is not None:
-        what = "%s of %s" % (_money(order["notional"]), sym)
+        what = "%s of %s" % (_money(order["notional"], cur), sym)
     else:
         q = _str_num(order.get("qty"))
         what = "%s share%s of %s" % (q, "" if q == "1" else "s", sym)
     typ = str(order.get("type", "market"))
     if typ == "limit":
-        how = "limit order at %s" % _money(order.get("limit_price"))
+        how = "limit order at %s" % _money(order.get("limit_price"), cur)
     elif typ == "stop":
-        how = "stop order at %s" % _money(order.get("stop_price"))
+        how = "stop order at %s" % _money(order.get("stop_price"), cur)
     elif typ == "stop_limit":
-        how = "stop %s, limit %s" % (_money(order.get("stop_price")), _money(order.get("limit_price")))
+        how = "stop %s, limit %s" % (_money(order.get("stop_price"), cur), _money(order.get("limit_price"), cur))
     else:
         how = "%s order" % typ.replace("_", " ")
     tif = TIF_WORDS.get(str(order.get("time_in_force", "day")), order.get("time_in_force"))
@@ -233,8 +241,11 @@ def render(order, idx, total, cfg, risk, state, today):
     broker = str(cfg.get("broker", "alpaca")).lower()
     paper = cfg.get("paper", True)
     acct = "PAPER account" if paper else "LIVE ACCOUNT, REAL MONEY"
-    lines = ["ORDER %d of %d, %s, %s" % (idx, total, acct, "Interactive Brokers" if broker == "ibkr" else "Alpaca"),
-             "  " + plain(order)]
+    if broker == "scalable":
+        acct = "LIVE ACCOUNT, REAL MONEY (Scalable has no paper account)"
+    name = {"ibkr": "Interactive Brokers", "scalable": "Scalable Capital"}.get(broker, "Alpaca")
+    lines = ["ORDER %d of %d, %s, %s" % (idx, total, acct, name),
+             "  " + plain(order, currency(cfg))]
     if order.get("why"):
         lines.append("  why: " + order["why"])
     lines.append("  " + label)
@@ -243,22 +254,29 @@ def render(order, idx, total, cfg, risk, state, today):
     if broker == "ibkr":
         lines.append("  Claude drafts this with the Interactive Brokers connector. IBKR sends it to your")
         lines.append("  IBKR account, and it only goes to the market after you approve it there.")
+    elif broker == "scalable":
+        lines.append("  Claude previews this with Scalable's preview_%s_order (ISIN and EUR from" % order.get("side", "buy"))
+        lines.append("  scalable.py tickets) and shows the full review. Nothing is placed by the preview.")
     else:
         lines.append("  Claude will call place_stock_order with exactly:")
         for l in json.dumps(tool_input(order), indent=2).splitlines():
             lines.append("    " + l)
     if ready:
         lines.append("  Reply \"yes\" to place this one order, or \"no\" to skip it.")
-        if broker != "ibkr":
+        if broker == "scalable":
+            lines.append("  Then you place it in the Scalable app, or Claude submits it after your second yes.")
+        elif broker != "ibkr":
             lines.append("  Claude's own card then asks again: Allow once places it, Deny stops it.")
     return "\n".join(lines), ready
 
 
 def ticket_json(order, idx, cfg, risk, state, today):
     ready, label, rv = status_of(order, risk, state, today)
-    return {"index": idx, "ready": ready, "status": label, "plain": plain(order),
-            "fingerprint": fingerprint(order), "paper": bool(cfg.get("paper", True)),
-            "broker": cfg.get("broker", "alpaca"), "tool": "place_stock_order",
+    scalable = str(cfg.get("broker", "")).lower() == "scalable"
+    tool = ("preview_%s_order" % order.get("side", "buy")) if scalable else "place_stock_order"
+    return {"index": idx, "ready": ready, "status": label, "plain": plain(order, currency(cfg)),
+            "fingerprint": fingerprint(order), "paper": False if scalable else bool(cfg.get("paper", True)),
+            "broker": cfg.get("broker", "alpaca"), "tool": tool,
             "tool_input": tool_input(order), "why": order.get("why", "")}
 
 
@@ -361,13 +379,20 @@ def cmd_approve(a):
         return 1
     rec = {"at": now_iso(), "date": today, "index": a.index, "fingerprint": fingerprint(order),
            "symbol": str(order.get("symbol", "")).upper(), "side": order.get("side"),
-           "plain": plain(order), "status": "approved", "reply": a.reply,
+           "plain": plain(order, currency(cfg)), "status": "approved", "reply": a.reply,
            "paper": bool(cfg.get("paper", True)), "broker": cfg.get("broker", "alpaca")}
     state.setdefault("orders", []).append(rec)
     write_json(a.state, state)
-    print("Recorded your yes for order %d: %s." % (a.index, plain(order)))
-    if str(cfg.get("broker", "alpaca")).lower() == "ibkr":
+    print("Recorded your yes for order %d: %s." % (a.index, plain(order, currency(cfg))))
+    broker = str(cfg.get("broker", "alpaca")).lower()
+    if broker == "ibkr":
         print("Now draft it with the Interactive Brokers connector; approve it in your IBKR account.")
+    elif broker == "scalable":
+        print("Now run scalable.py tickets for its ISIN, call preview_%s_order and show the whole review."
+              % order.get("side", "buy"))
+        print("Read-only access: place it in the Scalable app. Full access: submit only after a second, "
+              "separate yes to that review. Then: ticket.py result --index %d --status placed|denied|failed"
+              % a.index)
     else:
         print("Now call place_stock_order with exactly:")
         print(json.dumps(tool_input(order), indent=2))

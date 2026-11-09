@@ -1,0 +1,8 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"portfolioId\": \"demo-portfolio\", \"items\": [{\"isin\": \"US0378331005\", \"name\": \"Apple Inc.\", \"quantity\": \"3.6628\", \"currentValue\": {\"amount\": \"1150.40\", \"currency\": \"EUR\"}, \"averageBuyPrice\": {\"amount\": \"292.10\", \"currency\": \"EUR\"}}, {\"isin\": \"IE00B4L5Y983\", \"name\": \"iShares Core MSCI World UCITS ETF (Acc)\", \"quantity\": \"20\", \"currentValue\": {\"amount\": \"2140.00\", \"currency\": \"EUR\"}}, {\"isin\": \"US1912161007\", \"name\": \"Coca-Cola Co.\", \"quantity\": \"7.8571\", \"currentValue\": {\"amount\": \"606.10\", \"currency\": \"EUR\"}}], \"crypto_items\": []}"
+  }
+ ]
+}
