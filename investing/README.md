@@ -61,7 +61,7 @@ environment variable.
 | `/trader-analyst` | Earnings Analyst | Pulls each company's reported numbers from SEC XBRL (revenue, net income, diluted EPS, margins, growth) and its latest earnings release. |
 | `/trader-screener` | Stock Screener | Screens companies against your own rules and ranks what passes. |
 | `/trader-risk` | Risk Manager | Checks every proposed order against your limits and blocks anything over them. |
-| `/trader-broker` | Order Executor | Turns an approved order into the exact ticket your brokerage connector receives, and records your yes. It never places anything itself. |
+| `/trader-broker` | Order Executor | Turns an approved order into the exact ticket your brokerage connector receives (Alpaca, Interactive Brokers or Scalable Capital), and records your yes. It never places anything itself. With Scalable it also syncs your real depot (ISINs, EUR) into `trader/portfolio.json`. |
 | `/trader-tax` | Tax Optimizer | Tracks cost-basis lots, gains and losses, tax-loss harvesting candidates and wash sales. |
 | `/trader-alerts` | Price Alerts | Rings when a price target, a stop or the opening bell hits, with the real NYSE calendar. |
 | `/trader-rebalance` | Rebalancer | Brings the portfolio back to its target weights when it drifts past your band. |

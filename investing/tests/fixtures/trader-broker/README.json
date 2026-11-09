@@ -1,0 +1,3 @@
+{
+ "note": "Synthetic answers in the shape of an MCP tools/call result (content[].text). Scalable does not publish its answer schema; field names follow its CLI docs (items, cash_balance, buying_power). Not real account data."
+}
